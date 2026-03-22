@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>爆速！書類メーカー Pro Max</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -11,11 +11,9 @@
         <div id="input-section">
             <header>
                 <h1>爆速！書類メーカー Pro</h1>
-                <p class="subtitle">インボイス制度・源泉徴収・電子印影に完全対応</p>
+                <p class="subtitle">インボイス制度・源泉徴収・電子印影対応</p>
                 <div class="pr-badge">【PR】</div>
             </header>
-
-            <div id="error-message" class="error-box" style="display: none;"></div>
 
             <div class="ad-container">
                 <a href="あなたのASPリンク" target="_blank" class="ad-banner-link">
@@ -54,7 +52,7 @@
 
             <div class="form-row">
                 <div class="form-group" style="flex:1;">
-                    <label>ロゴ画像 (左上)</label>
+                    <label>ロゴ画像</label>
                     <input type="file" accept="image/*" onchange="handleFile(this, 'logo')">
                 </div>
                 <div class="form-group" style="flex:1;">
@@ -108,8 +106,7 @@
                         <option value="三菱UFJ銀行"><option value="三井住友銀行"><option value="みずほ銀行"><option value="楽天銀行"><option value="PayPay銀行">
                     </datalist>
                     <div class="suffix-input" style="flex:1;">
-                        <input type="text" id="branchName" placeholder="〇〇" oninput="updatePreview()">
-                        <span class="suffix-text">支店</span>
+                        <input type="text" id="branchName" placeholder="支店名" oninput="updatePreview()">
                     </div>
                 </div>
                 <div class="form-row">
@@ -118,19 +115,25 @@
                     </select>
                     <input type="text" id="accountNumber" placeholder="口座番号(7桁)" maxlength="7" style="flex:2;" oninput="handleNumberInput(this)">
                 </div>
-                <input type="text" id="accountHolder" placeholder="口座名義 (カタカナ)">
+                <input type="text" id="accountHolder" placeholder="口座名義 (カタカナ)" style="margin-top:10px;">
             </div>
 
             <div class="section-title">その他設定</div>
             <div class="form-group withholding-box">
                 <label class="checkbox-wrapper">
                     <input type="checkbox" id="withholding" onchange="updatePreview()">
-                    <span class="checkbox-text">源泉徴収（10.21%）を計算に含める</span>
+                    <span class="checkbox-text">源泉徴収（10.21%）を含める</span>
                 </label>
             </div>
             <div class="form-group">
                 <label>備考</label>
                 <textarea id="remarks" rows="3" placeholder="今月も大変お世話になりました。"></textarea>
+            </div>
+            <div class="form-group">
+                <label>通貨</label>
+                <select id="currency" onchange="updatePreview()">
+                    <option value="JPY">日本円 (¥)</option><option value="USD">USドル ($)</option><option value="EUR">ユーロ (€)</option>
+                </select>
             </div>
 
             <button class="primary-btn" onclick="handleExport()">PDFを生成して保存（待機10秒）</button>
@@ -151,13 +154,12 @@
         <div id="ad-overlay">
             <div class="ad-modal">
                 <div class="ad-content">
-                    <h3 id="ad-status">高品質なPDFを出力しています...</h3>
+                    <h3>高品質なPDFを出力中...</h3>
                     <div class="loader-container"><div class="loader-bar"></div></div>
                     <div id="timer">10</div>
                     <div class="featured-ad-box">
-                        <p class="featured-text">待ち時間におすすめのツールをチェック</p>
+                        <p class="featured-text">待ち時間におすすめのツール</p>
                         <a href="あなたのASPリンク" target="_blank" class="cta-button">【PR】確定申告が1分で終わる無料ソフト</a>
-                        <p class="timer-desc">※10秒経過後に自動的にダウンロードが始まります</p>
                     </div>
                 </div>
             </div>

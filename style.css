@@ -1,21 +1,38 @@
 :root { --primary: #007aff; --bg: #f5f7fa; --text: #333; --border: #e1e4e8; --tab-bg: #efefef; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+
+/* 修正：bodyの固定を解除し、スマホでのスクロールを許可 */
+body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; overflow-y: auto; }
 
 #main-container { display: flex; height: 100vh; }
-#input-section { flex: 0 0 60%; background: #fff; padding: 30px; overflow-y: auto; border-right: 2px solid var(--border); }
-#preview-section { flex: 1; background: #525659; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow: hidden; }
+
+/* PCレイアウト */
+#input-section { flex: 0 0 60%; background: #fff; padding: 25px; overflow-y: auto; border-right: 2px solid var(--border); }
+#preview-section { flex: 1; background: #525659; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow: hidden; position: relative; }
+
+/* スマホレイアウト（1100px以下） */
+@media (max-width: 1100px) {
+    #main-container { flex-direction: column; height: auto; }
+    #input-section { width: 100%; padding: 15px; overflow: visible; }
+    #preview-section { 
+        width: 100%; 
+        height: 500px; /* プレビューエリアの高さ確保 */
+        overflow: hidden; 
+        background: #ccc;
+        display: block; /* 中央寄せ解除 */
+    }
+    #preview-wrapper { 
+        margin: 20px auto;
+    }
+}
 
 h1 { font-size: 20px; color: var(--primary); margin-bottom: 2px; }
-.subtitle { font-size: 11px; color: #888; margin-bottom: 2px; }
-.pr-badge { font-size: 10px; color: #aaa; margin-bottom: 20px; font-weight: bold; }
-
-/* 赤字：必須を強調 */
+.subtitle { font-size: 11px; color: #888; }
+.pr-badge { font-size: 10px; color: #aaa; margin-bottom: 15px; font-weight: bold; }
 .required { color: #ff3b30 !important; font-weight: bold; margin-left: 4px; }
+.section-title { font-size: 12px; font-weight: bold; color: var(--primary); margin: 20px 0 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
 
-.section-title { font-size: 12px; font-weight: bold; color: var(--primary); margin: 25px 0 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }
-
-.tab-container { display: flex; position: relative; background: var(--tab-bg); border-radius: 8px; padding: 3px; z-index: 1; margin-bottom: 15px; }
+.tab-container { display: flex; position: relative; background: var(--tab-bg); border-radius: 8px; padding: 3px; margin-bottom: 15px; }
 .tab-container input { display: none; }
 .tab-item { flex: 1; padding: 10px 0; text-align: center; font-size: 13px; font-weight: bold; color: #666; cursor: pointer; z-index: 2; }
 .tab-bg { position: absolute; top: 3px; left: 3px; width: calc(33.33% - 3px); height: calc(100% - 6px); background: #fff; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: transform 0.3s ease; z-index: 1; }
@@ -24,39 +41,33 @@ h1 { font-size: 20px; color: var(--primary); margin-bottom: 2px; }
 #type3:checked ~ .tab-bg { transform: translateX(200%); }
 
 .form-group { margin-bottom: 12px; }
-.form-row { display: flex; gap: 10px; margin-bottom: 8px; }
-input, select, textarea { width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #fafafa; }
+.form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fafafa; -webkit-appearance: none; }
 
-/* 広告枠 */
-.ad-container { margin-bottom: 20px; }
-.ad-banner-link { display: block; background: #eef7ff; border: 1px solid #cce5ff; padding: 10px; border-radius: 8px; text-decoration: none; color: #0056b3; font-size: 12px; font-weight: bold; }
+.ad-container { margin-bottom: 15px; }
+.ad-banner-link { display: block; background: #eef7ff; border: 1px solid #cce5ff; padding: 12px; border-radius: 8px; text-decoration: none; color: #0056b3; font-size: 12px; font-weight: bold; text-align: center; }
 .ad-chip { background: #007aff; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin-right: 5px; }
 
-.affiliate-card { margin-top: 30px; padding: 15px; background: #f9fbfd; border: 1px solid #d0e0f0; border-radius: 12px; text-align: center; }
-.ad-tag-small { font-size: 9px; color: #aaa; margin-bottom: 5px; }
-.ad-title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-.ad-button { display: inline-block; background: var(--primary); color: #fff; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: bold; }
+.affiliate-card { margin-top: 25px; padding: 15px; background: #f9fbfd; border: 1px solid #d0e0f0; border-radius: 12px; text-align: center; }
+.ad-button { display: inline-block; background: var(--primary); color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; margin-top: 10px; }
 
-/* 待機画面 */
 #ad-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 9999; display: none; justify-content: center; align-items: center; }
-.ad-modal { background: #fff; padding: 40px; border-radius: 20px; text-align: center; width: 90%; max-width: 450px; }
-.loader-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; margin: 20px 0; }
+.ad-modal { background: #fff; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; }
+.loader-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 20px 0; overflow: hidden; }
 .loader-bar { width: 0%; height: 100%; background: var(--primary); transition: width 10s linear; }
-#timer { font-size: 70px; font-weight: bold; color: var(--primary); margin-bottom: 20px; }
-.cta-button { display: block; background: #ff3b30; color: #fff; padding: 18px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 16px; margin: 20px 0; box-shadow: 0 4px 15px rgba(255,59,48,0.3); }
-.timer-desc { font-size: 10px; color: #999; }
+#timer { font-size: 60px; font-weight: bold; color: var(--primary); }
+.cta-button { display: block; background: #ff3b30; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: bold; margin: 15px 0; }
 
-.primary-btn { width: 100%; padding: 20px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,122,255,0.3); }
-.secondary-btn { background: #eee; border: 1px solid var(--border); padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 11px; }
+.primary-btn { width: 100%; padding: 18px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 15px 0; }
+.secondary-btn { background: #eee; border: 1px solid var(--border); padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-bottom: 10px; }
 
-#preview-wrapper { transform-origin: top center; background: white; box-shadow: 0 0 50px rgba(0,0,0,0.6); }
-#pdf-content { width: 210mm; min-height: 297mm; padding: 15mm; background: white; box-sizing: border-box; }
-
-.item-row { background: #fdfdfd; border: 1px solid #eee; padding: 12px; border-radius: 10px; margin-bottom: 10px; }
-.item-row-top, .item-row-bottom { display: flex; gap: 6px; align-items: center; margin-bottom: 5px; }
-
-@media (max-width: 1100px) {
-    #main-container { flex-direction: column; height: auto; }
-    #input-section { width: 100%; }
-    #preview-section { height: 500px; }
+#preview-wrapper { 
+    transform-origin: top center; 
+    background: white; 
+    box-shadow: 0 0 20px rgba(0,0,0,0.3); 
+    width: 210mm; /* A4幅を固定 */
 }
+#pdf-content { width: 210mm; min-height: 297mm; padding: 15mm; background: white; }
+
+.item-row { background: #fdfdfd; border: 1px solid #eee; padding: 10px; border-radius: 10px; margin-bottom: 10px; }
+.item-row-top, .item-row-bottom { display: flex; gap: 5px; align-items: center; margin-bottom: 5px; }

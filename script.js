@@ -1,29 +1,105 @@
-let isComposing = false; 
 let imgData = { logo: '', seal: '' };
+let rowCount = 0;
 
 window.onload = () => {
-    addItemRow(); 
-    document.getElementById('issueDate').valueAsDate = new Date();
+    loadData(); // ページ読み込み時にローカルストレージからデータを復元
     
-    const holderInput = document.getElementById('accountHolder');
-    holderInput.addEventListener('compositionstart', () => { isComposing = true; });
-    holderInput.addEventListener('compositionend', (e) => {
-        isComposing = false;
-        handleHolderConvert(e.target);
-        updatePreview();
-    });
-    holderInput.addEventListener('input', (e) => {
-        if (!isComposing) { handleHolderConvert(e.target); }
-        updatePreview();
-    });
-
+    // その他の初期化リスナー
     document.getElementById('remarks').addEventListener('input', updatePreview);
-    
-    // 修正：初期表示を確実にするための遅延実行
     setTimeout(updatePreview, 500);
 };
 
-// 修正：スマホの画面サイズに合わせてプレビューを縮小するロジック
+// 修正：自動保存機能（入力内容をブラウザに保存）
+function saveData() {
+    try {
+        const data = {
+            docType: document.querySelector('input[name="docType"]:checked').value,
+            docNumber: document.getElementById('docNumber').value,
+            issueDate: document.getElementById('issueDate').value,
+            expiryDate: document.getElementById('expiryDate').value,
+            clientName: document.getElementById('clientName').value,
+            subject: document.getElementById('subject').value,
+            issuerName: document.getElementById('issuerName').value,
+            issuerAddress: document.getElementById('issuerAddress').value,
+            issuerTel: document.getElementById('issuerTel').value,
+            invoiceId: document.getElementById('invoiceId').value,
+            bankName: document.getElementById('bankName').value,
+            branchName: document.getElementById('branchName').value,
+            accountType: document.getElementById('accountType').value,
+            accountNumber: document.getElementById('accountNumber').value,
+            accountHolder: document.getElementById('accountHolder').value,
+            withholding: document.getElementById('withholding').checked,
+            remarks: document.getElementById('remarks').value,
+            currency: document.getElementById('currency').value,
+            imgData: imgData,
+            items: []
+        };
+
+        // 明細の保存
+        document.querySelectorAll('.item-row').forEach(row => {
+            const cb = row.querySelector('input[type="checkbox"]');
+            data.items.push({
+                date: row.querySelector('.row-date').value,
+                sync: cb ? cb.checked : false,
+                name: row.querySelector('.row-name').value,
+                qty: row.querySelector('.row-qty').value,
+                price: row.querySelector('.row-price').value,
+                tax: row.querySelector('.row-tax').value
+            });
+        });
+
+        localStorage.setItem('docMakerProData', JSON.stringify(data));
+    } catch (e) {
+        console.warn("画像サイズ等の制限により自動保存できませんでした");
+    }
+}
+
+// 修正：保存データの読み込みと復元
+function loadData() {
+    const saved = localStorage.getItem('docMakerProData');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            
+            // ラジオボタンの復元
+            if (data.docType) {
+                document.querySelector(`input[name="docType"][value="${data.docType}"]`).checked = true;
+            }
+            
+            // テキスト等の復元
+            const fields = ['docNumber', 'issueDate', 'expiryDate', 'clientName', 'subject', 'issuerName', 'issuerAddress', 'issuerTel', 'invoiceId', 'bankName', 'branchName', 'accountType', 'accountNumber', 'accountHolder', 'remarks', 'currency'];
+            fields.forEach(id => {
+                if (data[id] !== undefined && document.getElementById(id)) {
+                    document.getElementById(id).value = data[id];
+                }
+            });
+
+            // チェックボックス・画像の復元
+            if (data.withholding !== undefined) {
+                document.getElementById('withholding').checked = data.withholding;
+            }
+            if (data.imgData) {
+                imgData = data.imgData;
+            }
+
+            // 明細の復元
+            if (data.items && data.items.length > 0) {
+                document.getElementById('items-container').innerHTML = ''; 
+                data.items.forEach(item => addItemRow(item));
+            } else {
+                addItemRow();
+            }
+        } catch (e) {
+            addItemRow();
+            document.getElementById('issueDate').valueAsDate = new Date();
+        }
+    } else {
+        addItemRow();
+        document.getElementById('issueDate').valueAsDate = new Date();
+    }
+    updateUI();
+}
+
 function adjustScale() {
     const container = document.getElementById('preview-section');
     const wrapper = document.getElementById('preview-wrapper');
@@ -31,17 +107,15 @@ function adjustScale() {
 
     const containerWidth = container.offsetWidth - 40;
     const containerHeight = container.offsetHeight - 40;
-    const a4Width = 794; // 210mm in px approx
-    const a4Height = 1122; // 297mm in px approx
+    const a4Width = 794; 
+    const a4Height = 1122; 
 
     const scale = Math.min(containerWidth / a4Width, containerHeight / a4Height);
     
-    // スマホでは最低限見えるサイズを保証
     const finalScale = window.innerWidth < 1100 ? Math.max(scale, 0.35) : scale;
     wrapper.style.transform = `scale(${finalScale})`;
 }
 
-// 他の関数（handleFile, handleNumberInput等）は前回と同じ
 function handleFile(input, type) {
     const file = input.files[0];
     if (file) {
@@ -56,7 +130,12 @@ function handleFile(input, type) {
 
 function handleNumberInput(el) {
     let val = el.value.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
-    el.value = val.replace(/[^\d]/g, '');
+    val = val.replace(/[^\d]/g, '');
+    
+    if (el.maxLength > 0 && val.length > el.maxLength) {
+        val = val.slice(0, el.maxLength);
+    }
+    el.value = val;
     updatePreview();
 }
 
@@ -70,32 +149,44 @@ function handleTelInput(el) {
 
 function handleHolderConvert(el) {
     let val = el.value;
+    // 修正：入力完了時（フォーカスが外れた時）にひらがなをカタカナへ一括変換
     val = val.replace(/[\u3041-\u3096]/g, (m) => String.fromCharCode(m.charCodeAt(0) + 0x60));
-    val = val.replace(/[^\u30A0-\u30FF\u30FC\s　A-Za-z0-9]/g, '');
     el.value = val.toUpperCase();
 }
 
-function addItemRow() {
+// 修正：引数(initData)を受け取り、復元データがあれば初期値として挿入するよう改良
+function addItemRow(initData = null) {
+    rowCount++;
     const container = document.getElementById('items-container');
     const div = document.createElement('div');
     div.className = 'item-row';
     const isFirst = container.children.length === 0;
+    
+    const dateVal = initData ? initData.date : "";
+    const syncCheck = initData && initData.sync ? "checked" : "";
+    const nameVal = initData ? initData.name : "";
+    const qtyVal = initData ? initData.qty : "";
+    const priceVal = initData ? initData.price : "";
+    const taxVal = initData ? initData.tax : "0.1";
+
     div.innerHTML = `
         <div class="item-row-top">
-            <input type="date" class="row-date" style="flex:1.5;" oninput="updatePreview()">
-            ${!isFirst ? `<label style="font-size:9px;"><input type="checkbox" onchange="syncDate(this)">同日</label>` : '<span></span>'}
-            <input type="text" class="row-name" placeholder="品目" style="flex:3;" oninput="updatePreview()">
-            <button onclick="this.parentElement.parentElement.remove(); updatePreview()" style="border:none; background:none; font-size:18px;">✕</button>
+            <input type="date" class="row-date" name="row-date-${rowCount}" max="9999-12-31" value="${dateVal}" style="flex:1.5;" oninput="updatePreview()">
+            ${!isFirst ? `<label style="font-size:9px; display:flex; align-items:center;"><input type="checkbox" name="row-sync-${rowCount}" ${syncCheck} onchange="syncDate(this)" style="margin-right:2px;">同日</label>` : '<span></span>'}
+            <input type="text" class="row-name" name="row-name-${rowCount}" placeholder="品目" value="${nameVal}" style="flex:3;" oninput="updatePreview()">
+            <button onclick="this.parentElement.parentElement.remove(); updatePreview()" style="border:none; background:none; font-size:18px; cursor:pointer;">✕</button>
         </div>
         <div class="item-row-bottom">
-            <input type="text" class="row-qty" placeholder="数" style="flex:1;" oninput="handleNumberInput(this)">
-            <input type="text" class="row-price" placeholder="単価" style="flex:2;" oninput="handleNumberInput(this)">
-            <select class="row-tax" style="flex:1.5;" onchange="updatePreview()">
-                <option value="0.1">10%</option><option value="0.08">8%</option><option value="0">対象外</option>
+            <input type="text" class="row-qty" name="row-qty-${rowCount}" placeholder="数" value="${qtyVal}" style="flex:1;" oninput="handleNumberInput(this)">
+            <input type="text" class="row-price" name="row-price-${rowCount}" placeholder="単価" value="${priceVal}" style="flex:2;" oninput="handleNumberInput(this)">
+            <select class="row-tax" name="row-tax-${rowCount}" style="flex:1.5;" onchange="updatePreview()">
+                <option value="0.1" ${taxVal === "0.1" ? "selected" : ""}>10%</option>
+                <option value="0.08" ${taxVal === "0.08" ? "selected" : ""}>8%</option>
+                <option value="0" ${taxVal === "0" ? "selected" : ""}>対象外</option>
             </select>
         </div>`;
     container.appendChild(div);
-    updatePreview();
+    if (!initData) updatePreview();
 }
 
 function syncDate(checkbox) {
@@ -114,11 +205,19 @@ function updateUI() {
 }
 
 function updatePreview() {
+    const firstDateInput = document.querySelector('.row-date');
+    const firstDate = firstDateInput ? firstDateInput.value : "";
+    document.querySelectorAll('.item-row').forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        if (cb && cb.checked) { row.querySelector('.row-date').value = firstDate; }
+    });
+
     const type = document.querySelector('input[name="docType"]:checked').value;
     const client = document.getElementById('clientName').value || "〇〇 株式会社 御中";
     const subject = document.getElementById('subject').value;
     const docNo = document.getElementById('docNumber').value;
     const issueDate = document.getElementById('issueDate').value || "---";
+    const expiryLabel = document.getElementById('expiryLabel').innerText;
     const expiryDate = document.getElementById('expiryDate').value || "---";
     const sym = { JPY:"¥", USD:"$", EUR:"€" }[document.getElementById('currency').value];
     
@@ -127,6 +226,8 @@ function updatePreview() {
     const iTel = document.getElementById('issuerTel').value || "";
     const invId = document.getElementById('invoiceId').value || "";
     const rem = document.getElementById('remarks').value || "";
+    const branchName = document.getElementById('branchName').value;
+    const branchText = branchName ? branchName + "支店" : "";
 
     let sub10 = 0, sub8 = 0, subEx = 0, rowsHtml = "";
     document.querySelectorAll('.item-row').forEach(row => {
@@ -137,7 +238,10 @@ function updatePreview() {
         const rate = Number(row.querySelector('.row-tax').value);
         const total = qty * price;
         if(rate === 0.1) sub10 += total; else if(rate === 0.08) sub8 += total; else subEx += total;
-        rowsHtml += `<tr style="border-bottom:1px solid #eee; font-size:10px;"><td>${date}</td><td>${name}</td><td style="text-align:right;">${qty.toLocaleString()}</td><td style="text-align:right;">${sym}${price.toLocaleString()}</td><td style="text-align:center;">${rate*100}%</td><td style="text-align:right;">${sym}${total.toLocaleString()}</td></tr>`;
+        
+        const rateText = rate === 0 ? "対象外" : (rate * 100) + "%";
+        
+        rowsHtml += `<tr style="border-bottom:1px solid #eee; font-size:10px;"><td>${date}</td><td>${name}</td><td style="text-align:right;">${qty.toLocaleString()}</td><td style="text-align:right;">${sym}${price.toLocaleString()}</td><td style="text-align:center;">${rateText}</td><td style="text-align:right;">${sym}${total.toLocaleString()}</td></tr>`;
     });
 
     const tax10 = Math.floor(sub10 * 0.1), tax8 = Math.floor(sub8 * 0.08);
@@ -149,13 +253,26 @@ function updatePreview() {
     const logoHtml = imgData.logo ? `<img src="${imgData.logo}" style="max-height:40px; position:absolute; top:0; left:0;">` : "";
     const sealHtml = imgData.seal ? `<img src="${imgData.seal}" style="max-height:50px; position:absolute; right:0; top:-5px; opacity:0.8; z-index:0;">` : "";
 
+    let taxBreakdownHtml = "";
+    if (sub10 > 0 || sub8 > 0 || subEx > 0) {
+        taxBreakdownHtml = `<div style="font-size:9px; color:#666; line-height:1.4;">`;
+        if (sub10 > 0) taxBreakdownHtml += `<div>10%対象: ${sym}${sub10.toLocaleString()} (税: ${sym}${tax10.toLocaleString()})</div>`;
+        if (sub8 > 0) taxBreakdownHtml += `<div>8%対象: ${sym}${sub8.toLocaleString()} (税: ${sym}${tax8.toLocaleString()})</div>`;
+        if (subEx > 0) taxBreakdownHtml += `<div>対象外: ${sym}${subEx.toLocaleString()}</div>`;
+        taxBreakdownHtml += `</div>`;
+    }
+
     document.getElementById('pdf-content').innerHTML = `
         <div style="font-family:sans-serif; color:#333; line-height:1.4; font-size:11px; position:relative;">
             ${logoHtml}
             <div style="text-align:right; margin-bottom:10px;"><p>発行日: ${issueDate}</p>${docNo ? `<p>No: ${docNo}</p>` : ""}</div>
             <h1 style="color:#007aff; font-size:22px; text-align:center; margin:10px 0;">御${type}</h1>
             <div style="display:flex; justify-content:space-between;">
-                <div style="width:55%;"><p style="font-size:14px; border-bottom:1px solid #000;">${client}</p>${subject ? `<p style="margin-top:5px; font-weight:bold;">件名：${subject}</p>` : ""}</div>
+                <div style="width:55%;">
+                    <p style="font-size:14px; border-bottom:1px solid #000;">${client}</p>
+                    ${subject ? `<p style="margin-top:5px; font-weight:bold;">件名：${subject}</p>` : ""}
+                    <p style="margin-top:5px;">${expiryLabel}：${expiryDate}</p>
+                </div>
                 <div style="text-align:right; width:43%; position:relative;">
                     <div><p style="font-weight:bold;">${iName}</p></div>
                     ${sealHtml}
@@ -172,18 +289,26 @@ function updatePreview() {
                 </thead>
                 <tbody>${rowsHtml}</tbody>
             </table>
-            <div style="display:flex; justify-content:flex-end;">
-                <div style="width:45%; border-top:2px solid #333; padding-top:5px; font-size:10px;">
+            
+            <div style="display:flex; justify-content:space-between; margin-top:5px;">
+                <div style="width:45%; align-self:flex-end;">
+                    ${taxBreakdownHtml}
+                </div>
+                <div style="width:50%; border-top:2px solid #333; padding-top:5px; font-size:10px;">
                     <div style="display:flex; justify-content:space-between;"><span>小計</span><span>${sym}${grandSub.toLocaleString()}</span></div>
                     <div style="display:flex; justify-content:space-between;"><span>消費税</span><span>${sym}${(tax10+tax8).toLocaleString()}</span></div>
                     ${useWith ? `<div style="display:flex; justify-content:space-between; color:#d00000;"><span>源泉税</span><span>▲${sym}${withTax.toLocaleString()}</span></div>` : ""}
-                    <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #ccc;"><span>合計</span><span>${sym}${finalTotal.toLocaleString()}</span></div>
+                    <div style="display:flex; justify-content:space-between; font-weight:bold; border-top:1px solid #ccc; margin-top:3px; padding-top:3px;"><span>合計</span><span>${sym}${finalTotal.toLocaleString()}</span></div>
                 </div>
             </div>
-            ${type === "請求書" ? `<div style="margin-top:10px; border:1px solid #ddd; padding:8px; border-radius:6px; font-size:9px;"><p style="font-weight:bold; color:#007aff;">【振込先】</p><p>${document.getElementById('bankName').value || "---"} ${document.getElementById('branchName').value || ""} ${document.getElementById('accountType').value} ${document.getElementById('accountNumber').value || ""}</p><p>名義：${document.getElementById('accountHolder').value || "---"}</p></div>` : ""}
+            
+            ${type === "請求書" ? `<div style="margin-top:10px; border:1px solid #ddd; padding:8px; border-radius:6px; font-size:9px;"><p style="font-weight:bold; color:#007aff;">【振込先】</p><p>${document.getElementById('bankName').value || "---"} ${branchText} ${document.getElementById('accountType').value} ${document.getElementById('accountNumber').value || ""}</p><p>名義：${document.getElementById('accountHolder').value || "---"}</p></div>` : ""}
             ${rem ? `<div style="margin-top:10px; font-size:9px; color:#555;"><p style="font-weight:bold;">【備考】</p><p style="white-space:pre-wrap;">${rem}</p></div>` : ""}
         </div>`;
     adjustScale();
+    
+    // 修正：プレビューが更新されるタイミング（つまり何か入力された時）に自動保存を実行
+    saveData();
 }
 
 function handleExport() {

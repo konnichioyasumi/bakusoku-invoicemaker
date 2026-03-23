@@ -1,29 +1,30 @@
 :root { --primary: #007aff; --bg: #f5f7fa; --text: #333; --border: #e1e4e8; --tab-bg: #efefef; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* 修正：bodyの固定を解除し、スマホでのスクロールを許可 */
-body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; overflow-y: auto; }
+body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; overflow-x: hidden; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 
 #main-container { display: flex; height: 100vh; }
 
-/* PCレイアウト */
 #input-section { flex: 0 0 60%; background: #fff; padding: 25px; overflow-y: auto; border-right: 2px solid var(--border); }
 #preview-section { flex: 1; background: #525659; display: flex; justify-content: center; align-items: flex-start; padding: 20px; overflow: hidden; position: relative; }
 
-/* スマホレイアウト（1100px以下） */
+.ad-pc { display: block; }
+.ad-sp { display: none; }
+
 @media (max-width: 1100px) {
     #main-container { flex-direction: column; height: auto; }
-    #input-section { width: 100%; padding: 15px; overflow: visible; }
+    #input-section { width: 100%; padding: 15px; overflow: visible; border-right: none; }
     #preview-section { 
         width: 100%; 
-        height: 500px; /* プレビューエリアの高さ確保 */
+        height: 550px; 
         overflow: hidden; 
         background: #ccc;
-        display: block; /* 中央寄せ解除 */
+        display: block; 
     }
-    #preview-wrapper { 
-        margin: 20px auto;
-    }
+    #preview-wrapper { margin: 20px auto; }
+    
+    .ad-pc { display: none; }
+    .ad-sp { display: block; }
 }
 
 h1 { font-size: 20px; color: var(--primary); margin-bottom: 2px; }
@@ -42,31 +43,41 @@ h1 { font-size: 20px; color: var(--primary); margin-bottom: 2px; }
 
 .form-group { margin-bottom: 12px; }
 .form-row { display: flex; gap: 8px; margin-bottom: 8px; }
-input, select, textarea { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fafafa; -webkit-appearance: none; }
 
-.ad-container { margin-bottom: 15px; }
-.ad-banner-link { display: block; background: #eef7ff; border: 1px solid #cce5ff; padding: 12px; border-radius: 8px; text-decoration: none; color: #0056b3; font-size: 12px; font-weight: bold; text-align: center; }
-.ad-chip { background: #007aff; color: #fff; padding: 2px 5px; border-radius: 4px; font-size: 10px; margin-right: 5px; }
+input[type="text"], input[type="date"], input[type="number"], select, textarea { 
+    width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: #fafafa; -webkit-appearance: none; 
+}
+
+.t-input-group { display: flex; align-items: center; }
+.t-prefix { padding: 0 10px; background: #eee; border: 1px solid var(--border); border-right: none; border-radius: 8px 0 0 8px; height: 100%; display: flex; align-items: center; font-weight: bold; color: #555; }
+.t-input-group input { border-radius: 0 8px 8px 0; }
+
+.ad-section { margin: 15px 0; text-align: center; }
+
+.ad-banner-full a img { width: 100% !important; max-width: 600px; height: auto !important; border-radius: 6px; margin: 0 auto; display: block; }
+.ad-banner-rect a img { width: 100% !important; max-width: 100% !important; height: auto !important; border-radius: 8px; margin: 0 auto; display: block; }
+.modal-ad-img { width: 100% !important; max-width: 100% !important; height: auto !important; border-radius: 8px; margin: 0 auto; display: block; }
+
+img[width="1"], img[height="1"], img[src*="0.gif"] { 
+    position: absolute !important; width: 1px !important; height: 1px !important; opacity: 0 !important; pointer-events: none !important; margin: 0 !important; padding: 0 !important; border: none !important; 
+}
+
+.ad-btn-text { display: inline-block; padding: 12px 25px; background: #fff; border: 2px solid var(--primary); color: var(--primary); text-decoration: none; font-weight: bold; border-radius: 50px; font-size: 14px; margin: 10px 0; transition: all 0.3s; }
+.ad-btn-text:hover { background: var(--primary); color: #fff; }
 
 .affiliate-card { margin-top: 25px; padding: 15px; background: #f9fbfd; border: 1px solid #d0e0f0; border-radius: 12px; text-align: center; }
-.ad-button { display: inline-block; background: var(--primary); color: #fff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: bold; margin-top: 10px; }
 
 #ad-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 9999; display: none; justify-content: center; align-items: center; }
 .ad-modal { background: #fff; padding: 30px; border-radius: 20px; text-align: center; width: 90%; max-width: 400px; }
 .loader-container { width: 100%; height: 8px; background: #eee; border-radius: 4px; margin: 20px 0; overflow: hidden; }
 .loader-bar { width: 0%; height: 100%; background: var(--primary); transition: width 10s linear; }
 #timer { font-size: 60px; font-weight: bold; color: var(--primary); }
-.cta-button { display: block; background: #ff3b30; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: bold; margin: 15px 0; }
+.cta-button { display: inline-block; background: #ff3b30; color: #fff; padding: 15px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-top: 15px; font-size: 14px; width: 100%; }
 
 .primary-btn { width: 100%; padding: 18px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; margin: 15px 0; }
 .secondary-btn { background: #eee; border: 1px solid var(--border); padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-bottom: 10px; }
 
-#preview-wrapper { 
-    transform-origin: top center; 
-    background: white; 
-    box-shadow: 0 0 20px rgba(0,0,0,0.3); 
-    width: 210mm; /* A4幅を固定 */
-}
+#preview-wrapper { transform-origin: top center; background: white; box-shadow: 0 0 20px rgba(0,0,0,0.3); width: 210mm; }
 #pdf-content { width: 210mm; min-height: 297mm; padding: 15mm; background: white; }
 
 .item-row { background: #fdfdfd; border: 1px solid #eee; padding: 10px; border-radius: 10px; margin-bottom: 10px; }

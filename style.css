@@ -29,6 +29,12 @@ body { font-family: -apple-system, sans-serif; background: var(--bg); color: var
 
 h1 { font-size: 20px; color: var(--primary); margin-bottom: 2px; }
 .subtitle { font-size: 11px; color: #888; }
+
+/* ▼ 新規追加：メリットバッジのスタイル ▼ */
+.merit-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.merit-badge { background: #e6f2ff; color: var(--primary); font-size: 10px; font-weight: bold; padding: 4px 8px; border-radius: 4px; border: 1px solid #cce5ff; }
+/* ▲ 新規追加終了 ▲ */
+
 .pr-badge { font-size: 10px; color: #aaa; margin-bottom: 15px; font-weight: bold; }
 .required { color: #ff3b30 !important; font-weight: bold; margin-left: 4px; }
 .section-title { font-size: 12px; font-weight: bold; color: var(--primary); margin: 20px 0 10px; border-bottom: 2px solid var(--primary); padding-bottom: 5px; }

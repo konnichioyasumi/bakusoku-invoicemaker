@@ -2,49 +2,75 @@ let imgData = { logo: '', seal: '' };
 let rowCount = 0;
 
 window.onload = () => {
+    updateStorageLists();
     loadData();
     document.getElementById('remarks').addEventListener('input', updatePreview);
     setTimeout(updatePreview, 500);
 };
 
+function getFormData() {
+    const data = {
+        docType: document.querySelector('input[name="docType"]:checked').value,
+        docNumber: document.getElementById('docNumber').value,
+        issueDate: document.getElementById('issueDate').value,
+        expiryDate: document.getElementById('expiryDate').value,
+        clientName: document.getElementById('clientName').value,
+        subject: document.getElementById('subject').value,
+        issuerName: document.getElementById('issuerName').value,
+        issuerAddress: document.getElementById('issuerAddress').value,
+        issuerTel: document.getElementById('issuerTel').value,
+        invoiceId: document.getElementById('invoiceId').value,
+        bankName: document.getElementById('bankName').value,
+        branchName: document.getElementById('branchName').value,
+        accountType: document.getElementById('accountType').value,
+        accountNumber: document.getElementById('accountNumber').value,
+        accountHolder: document.getElementById('accountHolder').value,
+        withholding: document.getElementById('withholding').checked,
+        remarks: document.getElementById('remarks').value,
+        currency: document.getElementById('currency').value,
+        imgData: imgData,
+        items: []
+    };
+    document.querySelectorAll('.item-row').forEach(row => {
+        const cb = row.querySelector('input[type="checkbox"]');
+        data.items.push({
+            date: row.querySelector('.row-date').value,
+            sync: cb ? cb.checked : false,
+            name: row.querySelector('.row-name').value,
+            qty: row.querySelector('.row-qty').value,
+            price: row.querySelector('.row-price').value,
+            tax: row.querySelector('.row-tax').value
+        });
+    });
+    return data;
+}
+
+function applyDataToUI(data) {
+    if (data.docType) {
+        document.querySelector(`input[name="docType"][value="${data.docType}"]`).checked = true;
+    }
+    const fields = ['docNumber', 'issueDate', 'expiryDate', 'clientName', 'subject', 'issuerName', 'issuerAddress', 'issuerTel', 'invoiceId', 'bankName', 'branchName', 'accountType', 'accountNumber', 'accountHolder', 'remarks', 'currency'];
+    fields.forEach(id => {
+        if (data[id] !== undefined && document.getElementById(id)) {
+            document.getElementById(id).value = data[id];
+        }
+    });
+    if (data.withholding !== undefined) document.getElementById('withholding').checked = data.withholding;
+    if (data.imgData) imgData = data.imgData;
+
+    document.getElementById('items-container').innerHTML = ''; 
+    if (data.items && data.items.length > 0) {
+        data.items.forEach(item => addItemRow(item));
+    } else {
+        addItemRow();
+    }
+    updateUI();
+    updatePreview();
+}
+
 function saveData() {
     try {
-        const data = {
-            docType: document.querySelector('input[name="docType"]:checked').value,
-            docNumber: document.getElementById('docNumber').value,
-            issueDate: document.getElementById('issueDate').value,
-            expiryDate: document.getElementById('expiryDate').value,
-            clientName: document.getElementById('clientName').value,
-            subject: document.getElementById('subject').value,
-            issuerName: document.getElementById('issuerName').value,
-            issuerAddress: document.getElementById('issuerAddress').value,
-            issuerTel: document.getElementById('issuerTel').value,
-            invoiceId: document.getElementById('invoiceId').value,
-            bankName: document.getElementById('bankName').value,
-            branchName: document.getElementById('branchName').value,
-            accountType: document.getElementById('accountType').value,
-            accountNumber: document.getElementById('accountNumber').value,
-            accountHolder: document.getElementById('accountHolder').value,
-            withholding: document.getElementById('withholding').checked,
-            remarks: document.getElementById('remarks').value,
-            currency: document.getElementById('currency').value,
-            imgData: imgData,
-            items: []
-        };
-
-        document.querySelectorAll('.item-row').forEach(row => {
-            const cb = row.querySelector('input[type="checkbox"]');
-            data.items.push({
-                date: row.querySelector('.row-date').value,
-                sync: cb ? cb.checked : false,
-                name: row.querySelector('.row-name').value,
-                qty: row.querySelector('.row-qty').value,
-                price: row.querySelector('.row-price').value,
-                tax: row.querySelector('.row-tax').value
-            });
-        });
-
-        localStorage.setItem('docMakerProData', JSON.stringify(data));
+        localStorage.setItem('docMakerProData', JSON.stringify(getFormData()));
     } catch (e) {
         console.warn("画像サイズ等の制限により自動保存できませんでした");
     }
@@ -54,32 +80,7 @@ function loadData() {
     const saved = localStorage.getItem('docMakerProData');
     if (saved) {
         try {
-            const data = JSON.parse(saved);
-            
-            if (data.docType) {
-                document.querySelector(`input[name="docType"][value="${data.docType}"]`).checked = true;
-            }
-            
-            const fields = ['docNumber', 'issueDate', 'expiryDate', 'clientName', 'subject', 'issuerName', 'issuerAddress', 'issuerTel', 'invoiceId', 'bankName', 'branchName', 'accountType', 'accountNumber', 'accountHolder', 'remarks', 'currency'];
-            fields.forEach(id => {
-                if (data[id] !== undefined && document.getElementById(id)) {
-                    document.getElementById(id).value = data[id];
-                }
-            });
-
-            if (data.withholding !== undefined) {
-                document.getElementById('withholding').checked = data.withholding;
-            }
-            if (data.imgData) {
-                imgData = data.imgData;
-            }
-
-            if (data.items && data.items.length > 0) {
-                document.getElementById('items-container').innerHTML = ''; 
-                data.items.forEach(item => addItemRow(item));
-            } else {
-                addItemRow();
-            }
+            applyDataToUI(JSON.parse(saved));
         } catch (e) {
             addItemRow();
             document.getElementById('issueDate').valueAsDate = new Date();
@@ -89,6 +90,85 @@ function loadData() {
         document.getElementById('issueDate').valueAsDate = new Date();
     }
     updateUI();
+}
+
+function updateStorageLists() {
+    const tSelect = document.getElementById('templateSelect');
+    const hSelect = document.getElementById('historySelect');
+    if(!tSelect || !hSelect) return;
+    
+    tSelect.innerHTML = '<option value="">テンプレートを選択...</option>';
+    const templates = JSON.parse(localStorage.getItem('docMakerTemplates') || '[]');
+    templates.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.id;
+        opt.textContent = t.name;
+        tSelect.appendChild(opt);
+    });
+
+    hSelect.innerHTML = '<option value="">過去の履歴を選択...</option>';
+    const history = JSON.parse(localStorage.getItem('docMakerHistory') || '[]');
+    history.forEach(h => {
+        const opt = document.createElement('option');
+        opt.value = h.id;
+        opt.textContent = h.summary;
+        hSelect.appendChild(opt);
+    });
+}
+
+function saveTemplate() {
+    const name = prompt("保存するテンプレートの名前を入力してください\n（例：A社用、基本フォーマット等）");
+    if (!name) return;
+    try {
+        const templates = JSON.parse(localStorage.getItem('docMakerTemplates') || '[]');
+        templates.push({ id: Date.now().toString(), name: name, data: getFormData() });
+        localStorage.setItem('docMakerTemplates', JSON.stringify(templates));
+        updateStorageLists();
+        alert("テンプレートを保存しました。");
+    } catch(e) { alert("保存容量の上限に達しました。画像のサイズを小さくしてください。"); }
+}
+
+function loadTemplate() {
+    const id = document.getElementById('templateSelect').value;
+    if (!id) return;
+    const templates = JSON.parse(localStorage.getItem('docMakerTemplates') || '[]');
+    const t = templates.find(x => x.id === id);
+    if (t) {
+        applyDataToUI(t.data);
+        saveData();
+    }
+}
+
+function deleteTemplate() {
+    const id = document.getElementById('templateSelect').value;
+    if (!id) return;
+    if (!confirm("選択したテンプレートを削除しますか？")) return;
+    let templates = JSON.parse(localStorage.getItem('docMakerTemplates') || '[]');
+    templates = templates.filter(x => x.id !== id);
+    localStorage.setItem('docMakerTemplates', JSON.stringify(templates));
+    updateStorageLists();
+}
+
+function loadHistory() {
+    const id = document.getElementById('historySelect').value;
+    if (!id) return;
+    const history = JSON.parse(localStorage.getItem('docMakerHistory') || '[]');
+    const h = history.find(x => x.id === id);
+    if (h) {
+        applyDataToUI(h.data);
+        saveData();
+        alert("過去のデータを複製しました。日付などを適宜変更してください。");
+    }
+}
+
+function deleteHistory() {
+    const id = document.getElementById('historySelect').value;
+    if (!id) return;
+    if (!confirm("選択した履歴を削除しますか？")) return;
+    let history = JSON.parse(localStorage.getItem('docMakerHistory') || '[]');
+    history = history.filter(x => x.id !== id);
+    localStorage.setItem('docMakerHistory', JSON.stringify(history));
+    updateStorageLists();
 }
 
 function adjustScale() {
@@ -122,10 +202,7 @@ function handleFile(input, type) {
 function handleNumberInput(el) {
     let val = el.value.replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
     val = val.replace(/[^\d]/g, '');
-    
-    if (el.maxLength > 0 && val.length > el.maxLength) {
-        val = val.slice(0, el.maxLength);
-    }
+    if (el.maxLength > 0 && val.length > el.maxLength) val = val.slice(0, el.maxLength);
     el.value = val;
     updatePreview();
 }
@@ -304,6 +381,21 @@ function handleExport() {
     if(!document.getElementById('issuerName').value) errs.push("発行者名を入力してください");
     if(errs.length > 0) { alert(errs.join("\n")); return; }
     
+    const currentData = getFormData();
+    try {
+        let history = JSON.parse(localStorage.getItem('docMakerHistory') || '[]');
+        const dateStr = new Date().toLocaleString('ja-JP', { year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        const client = currentData.clientName || '件名なし';
+        history.unshift({
+            id: Date.now().toString(),
+            summary: `${dateStr} - ${client}`,
+            data: currentData
+        });
+        if (history.length > 20) history = history.slice(0, 20);
+        localStorage.setItem('docMakerHistory', JSON.stringify(history));
+        updateStorageLists();
+    } catch(e) { console.warn("履歴保存エラー"); }
+
     document.getElementById('ad-overlay').style.display = "flex";
     const bar = document.querySelector('.loader-bar');
     setTimeout(() => { bar.style.width = "100%"; }, 50);
